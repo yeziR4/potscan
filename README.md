@@ -19,9 +19,11 @@ Early development.
 | Piece | State |
 | --- | --- |
 | Address mapper (EVM ↔ Substrate) | Done, tested against addresses published for the V3 testnet |
-| Network status probes | In progress |
+| Network status, checked every minute, 24 h history | Done |
 | Block and contract indexer | Planned |
 | Contract verification | Planned |
+
+While the Portaldot testnet is unavailable, PotScan also tracks Polkadot Hub TestNet, which runs the same pallet-revive stack.
 
 ## Develop
 
@@ -29,7 +31,20 @@ Requires Node ≥ 22.13.
 
 ```bash
 npm install
+npm run dev      # API on :8787, UI on http://localhost:5173
 npm test
 ```
+
+Production: `npm run build && npm start` serves the UI and API from one process on `PORT` (default 8787). Probe history is kept in SQLite at `POTSCAN_DB` (default `data/potscan.db`).
+
+## Layout
+
+| Package | What it holds |
+| --- | --- |
+| `packages/core` | Network list, address mapping, endpoint probes; no I/O beyond the probes |
+| `packages/server` | Probe scheduler, SQLite history, JSON API, static hosting for the UI |
+| `packages/web` | React UI |
+
+The Portaldot logo and colours belong to the Portaldot project and are used to mark PotScan as a Portaldot tool. PotScan itself is independent and MIT licensed.
 
 MIT
