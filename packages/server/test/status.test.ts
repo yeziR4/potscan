@@ -36,7 +36,14 @@ test("uptime is the share of successful probes, and 'since' is when the current 
   assert.equal(status.uptime24h, 0.5);
   assert.equal(status.latest?.ok, false);
   assert.equal(status.since, NOW - MINUTE);
+  assert.equal(status.sinceIsLowerBound, false);
   assert.deepEqual(status.history.map(h => h.ok), [true, true, false, false]);
+});
+
+test("a state seen since the first probe is only a lower bound on how long it has lasted", () => {
+  const status = endpointStatus(storeWith([false, false, false]), net, "evm", NOW);
+  assert.equal(status.since, NOW - 2 * MINUTE);
+  assert.equal(status.sinceIsLowerBound, true);
 });
 
 test("probes older than 24 h do not count", () => {

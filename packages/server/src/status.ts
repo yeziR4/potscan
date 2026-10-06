@@ -11,6 +11,8 @@ export type EndpointStatus = {
   uptime24h?: number;
   /** When the endpoint last changed between up and down. */
   since?: number;
+  /** True when no change has been seen in the window, so the state may have started before `since`. */
+  sinceIsLowerBound?: boolean;
   /** One entry per probe in the last 24 h, oldest first, for the history bar. */
   history: { ok: boolean; at: number }[];
 };
@@ -36,6 +38,7 @@ export function endpointStatus(store: Store, network: Network, kind: EndpointKin
     latest,
     uptime24h: probes.filter(p => p.ok).length / probes.length,
     since,
+    sinceIsLowerBound: since === probes[0]!.checkedAt,
     history: probes.map(p => ({ ok: p.ok, at: p.checkedAt })),
   };
 }
