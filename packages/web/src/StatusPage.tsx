@@ -1,5 +1,6 @@
 import { getJson, type EndpointStatus, type IndexerState, type Network, type NetworkStatus } from "./api.ts";
 import { ago, blockNumber, duration, percent } from "./format.ts";
+import { IN_SYNC_BLOCKS } from "./pages/OverviewPage.tsx";
 import { useNow, usePolling } from "./usePolling.ts";
 
 const KIND_LABEL = { substrate: "Substrate RPC", evm: "Ethereum RPC" } as const;
@@ -56,7 +57,7 @@ function IndexerLine({ state }: { state: IndexerState }) {
       {state.connected ? (
         <>
           {state.blocks.toLocaleString("en-US")} blocks indexed{range},{" "}
-          {behind === undefined ? "starting" : behind <= 2 ? "in sync with the finalized head" : `${behind.toLocaleString("en-US")} blocks behind`}
+          {behind === undefined ? "starting" : behind <= IN_SYNC_BLOCKS ? "in sync with the finalized head" : `${behind.toLocaleString("en-US")} blocks behind`}
           {state.lastError && <span className="reason-inline">. Retrying after: {state.lastError}</span>}
         </>
       ) : (

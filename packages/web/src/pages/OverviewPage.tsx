@@ -176,12 +176,15 @@ export function OverviewPage({ network }: { network: Network }) {
   );
 }
 
+/** The indexer saves blocks in small batches, so a few blocks behind the finalized head is normal. */
+export const IN_SYNC_BLOCKS = 10;
+
 function IndexerSummary({ state }: { state: IndexerState }) {
   if (!state.connected || state.indexed === undefined || state.head === undefined) return null;
   const behind = state.head - state.indexed;
   return (
     <span className="faint num">
-      {behind <= 2 ? "In sync" : `Catching up: ${behind.toLocaleString("en-US")} blocks behind`} · head {blockNumber(state.head)}
+      {behind <= IN_SYNC_BLOCKS ? "In sync" : `Catching up: ${behind.toLocaleString("en-US")} blocks behind`} · head {blockNumber(state.head)}
     </span>
   );
 }
