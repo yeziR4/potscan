@@ -1,0 +1,22 @@
+{
+  "name": "@potscan/core",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@polkadot/util": "^13.5.1",
+    "@polkadot/util-crypto": "^13.5.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2",
+    "@types/node": "^22.15.0"
+  }
+}
