@@ -9,6 +9,10 @@ export type Network = {
   token: string;
   decimals: number;
   ss58: number;
+  /** Where indexing starts on first run: from genesis, or this many blocks behind the finalized head. */
+  indexFrom: "genesis" | { behindHead: number };
+  /** Keep only this many recent blocks; unset keeps everything. */
+  retainBlocks?: number;
 };
 
 export const NETWORKS: Record<string, Network> = {
@@ -22,8 +26,10 @@ export const NETWORKS: Record<string, Network> = {
     token: "tPOTv3",
     decimals: 14,
     ss58: 42,
+    indexFrom: "genesis",
   },
   // Same pallet-revive stack, used for development while the Portaldot testnet is unavailable.
+  // It is 14M+ blocks long and busy, so only a recent window is kept.
   "polkadot-hub-testnet": {
     id: "polkadot-hub-testnet",
     name: "Polkadot Hub TestNet",
@@ -33,5 +39,7 @@ export const NETWORKS: Record<string, Network> = {
     token: "PAS",
     decimals: 10,
     ss58: 42,
+    indexFrom: { behindHead: 300 },
+    retainBlocks: 20_000,
   },
 };
