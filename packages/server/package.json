@@ -1,0 +1,19 @@
+{
+  "name": "@potscan/server",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node --import tsx --disable-warning=ExperimentalWarning src/main.ts",
+    "test": "node --import tsx --disable-warning=ExperimentalWarning --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@potscan/core": "0.1.0",
+    "tsx": "^4.20.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "@types/node": "^22.15.0"
+  }
+}
