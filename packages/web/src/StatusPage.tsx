@@ -1,4 +1,4 @@
-import { getJson, type EndpointStatus, type Network, type NetworkStatus } from "./api.ts";
+import { getJson, type EndpointStatus, type IndexerState, type Network, type NetworkStatus } from "./api.ts";
 import { ago, blockNumber, duration, percent } from "./format.ts";
 import { useNow, usePolling } from "./usePolling.ts";
 
@@ -38,10 +38,31 @@ export function StatusPage({ networks }: { networks: Network[] }) {
             {status.endpoints.map(endpoint => (
               <Endpoint key={endpoint.kind} status={endpoint} now={now} />
             ))}
+            <IndexerLine state={status.indexer} />
           </section>
         );
       })}
     </>
+  );
+}
+
+function IndexerLine({ state }: { state: IndexerState }) {
+  const range =
+    state.first !== undefined && state.last !== undefined ? ` (${blockNumber(state.first)} – ${blockNumber(state.last)})` : "";
+  const behind = state.head !== undefined && state.indexed !== undefined ? state.head - state.indexed : undefined;
+  return (
+    <p className="indexer-line">
+      <span className="stat-name">PotScan indexer</span>
+      {state.connected ? (
+        <>
+          {state.blocks.toLocaleString("en-US")} blocks indexed{range},{" "}
+          {behind === undefined ? "starting" : behind <= 2 ? "in sync with the finalized head" : `${behind.toLocaleString("en-US")} blocks behind`}
+          {state.lastError && <span className="reason-inline">. Retrying after: {state.lastError}</span>}
+        </>
+      ) : (
+        <>Waiting for the node. {state.blocks > 0 ? `${state.blocks.toLocaleString("en-US")} blocks kept from before.` : "Indexing starts from genesis when it is reachable."}</>
+      )}
+    </p>
   );
 }
 

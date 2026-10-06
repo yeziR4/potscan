@@ -24,3 +24,22 @@ export const ago = (at: number, now: number) => `${duration(now - at)} ago`;
 export const percent = (share: number) => `${(share * 100).toFixed(share === 1 || share === 0 ? 0 : 1)}%`;
 
 export const blockNumber = (n: number) => `#${n.toLocaleString("en-US")}`;
+
+/** "0x3246…d846": enough of a hash to recognise it. */
+export const short = (value: string, keep = 6) => (value.length > keep * 2 + 3 ? `${value.slice(0, keep)}…${value.slice(-4)}` : value);
+
+/** An integer amount in the smallest unit, shown in whole tokens without losing precision. */
+export function amount(raw: string | number | undefined, decimals: number, symbol: string): string {
+  if (raw === undefined) return "—";
+  const value = BigInt(raw);
+  const base = 10n ** BigInt(decimals);
+  const whole = value / base;
+  const fraction = (value % base).toString().padStart(decimals, "0").replace(/0+$/, "").slice(0, 6);
+  return `${whole.toLocaleString("en-US")}${fraction ? `.${fraction}` : ""} ${symbol}`;
+}
+
+/** Ethereum-side values in pallet-revive use 18 decimals whatever the native token's precision. */
+export const EVM_DECIMALS = 18;
+
+export const dateTime = (ms: number) =>
+  new Date(ms).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "medium", timeZone: "UTC" }) + " UTC";

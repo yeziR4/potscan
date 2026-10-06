@@ -20,8 +20,13 @@ Early development.
 | --- | --- |
 | Address mapper (EVM ↔ Substrate) | Done, tested against addresses published for the V3 testnet |
 | Network status, checked every minute, 24 h history | Done |
-| Block and contract indexer | Planned |
+| Indexer: blocks, extrinsics, events, Solidity transactions, contract deployments (Revive and ink!) | Done |
+| Explorer pages and search | Done |
 | Contract verification | Planned |
+
+Each Solidity transaction is linked to the Substrate extrinsic that carried it: pallet-revive keeps the Ethereum block number equal to the Substrate one, and the transaction index equal to the extrinsic index. The transaction page therefore shows both the Ethereum receipt and the native fee and balance events.
+
+Extrinsics that polkadot.js cannot decode, such as ones with a chain-specific signed extension, are stored as `unknown.undecodable` with their hash, and their outcome and fee still come from their events. Indexing never stops on them.
 
 While the Portaldot testnet is unavailable, PotScan also tracks Polkadot Hub TestNet, which runs the same pallet-revive stack.
 
