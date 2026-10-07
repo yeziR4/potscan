@@ -7,10 +7,14 @@ import { ChainStore } from "./indexer/chainStore.ts";
 import { Indexer } from "./indexer/indexer.ts";
 import { createStatic } from "./static.ts";
 import { startMonitor } from "./status.ts";
+import { Attester } from "./verify/attester.ts";
+import { VerifiedStore } from "./verify/verifiedStore.ts";
+import { Verifier } from "./verify/verifier.ts";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const DB_PATH = process.env.POTSCAN_DB ?? "data/potscan.db";
 const PROBE_INTERVAL_MS = Number(process.env.PROBE_INTERVAL_MS ?? 60_000);
+const PUBLIC_URL = process.env.POTSCAN_PUBLIC_URL ?? `http://localhost:${PORT}`;
 const WEB_ROOT = fileURLToPath(new URL("../../web/dist", import.meta.url));
 
 const store = new Store(DB_PATH);
@@ -20,7 +24,25 @@ startMonitor(store, Object.values(NETWORKS), PROBE_INTERVAL_MS);
 const indexers = new Map(Object.values(NETWORKS).map(n => [n.id, new Indexer(chain, n)]));
 if (process.env.POTSCAN_INDEX !== "off") indexers.forEach(indexer => indexer.start());
 
-const api = createApi(store, chain, indexers, NETWORKS);
+// Attesting needs a funded key (POTSCAN_KEY) and a VerificationRegistry deployment for the network.
+const attesters = new Map(
+  Object.values(NETWORKS).flatMap(n => {
+    const attester = Attester.forNetwork(n, process.env.POTSCAN_KEY);
+    return attester ? [[n.id, attester] as const] : [];
+  }),
+);
+for (const [network, a] of attesters) console.log(`Attesting on ${network} as ${a.attester} to ${a.registryAddress}`);
+
+const api = createApi({
+  store,
+  chain,
+  indexers,
+  networks: NETWORKS,
+  verifier: new Verifier(),
+  verified: new VerifiedStore(store.db),
+  attesters,
+  publicUrl: PUBLIC_URL,
+});
 const web = createStatic(WEB_ROOT);
 createServer((req, res) => {
   if (api(req, res) || web(req, res)) return;

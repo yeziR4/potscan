@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "node --import tsx --disable-warning=ExperimentalWarning src/main.ts",
+    "start": "node --import tsx --disable-warning=ExperimentalWarning --env-file-if-exists=../contracts/.env src/main.ts",
     "test": "node --import tsx --disable-warning=ExperimentalWarning --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
