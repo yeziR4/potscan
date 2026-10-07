@@ -5,12 +5,17 @@ import { Link, useGo } from "../router.tsx";
 import { useApi } from "../useApi.ts";
 import { Copy, Empty, Engine, Field, Fields, Hash, Outcome, PageHead } from "../ui.tsx";
 import { ExtrinsicTable } from "./BlockPages.tsx";
+import { SourcePanel } from "./SourcePanel.tsx";
 
 export function AccountPage({ network, query }: { network: Network; query: string }) {
   const go = useGo();
   const [input, setInput] = useState(query);
+  const [reloads, setReloads] = useState(0);
   useEffect(() => setInput(query), [query]);
-  const { data, error } = useApi<Account>(query ? withNetwork(`/api/account?q=${encodeURIComponent(query)}`, network.id) : undefined);
+  const { data, error } = useApi<Account>(
+    query ? withNetwork(`/api/account?q=${encodeURIComponent(query)}${reloads ? `&r=${reloads}` : ""}`, network.id) : undefined,
+  );
+  const isContract = Boolean(data?.code || data?.contract);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -21,7 +26,7 @@ export function AccountPage({ network, query }: { network: Network; query: strin
   return (
     <>
       <PageHead
-        title={data?.contract ? "Contract" : "Account"}
+        title={isContract ? "Contract" : "Account"}
         lede={`Every account on ${network.name} has two forms: an EVM address for MetaMask and Solidity, and a Substrate address for native transfers and ink!. Paste either one.`}
       />
 
@@ -48,13 +53,22 @@ export function AccountPage({ network, query }: { network: Network; query: strin
       </section>
 
       {query && data?.contract && <ContractInfo contract={data.contract} />}
+      {query && data?.code && (
+        <SourcePanel
+          network={network}
+          address={data.evm}
+          verified={data.code.verified}
+          registry={data.registry}
+          onVerified={() => setReloads(n => n + 1)}
+        />
+      )}
 
       {query && data && (
         <>
           <section className="panel">
             <div className="panel-head">
               <h2>Solidity transactions</h2>
-              <span className="meta">Sent from or to {data.contract ? "this contract" : "the EVM address"}</span>
+              <span className="meta">Sent from or to {isContract ? "this contract" : "the EVM address"}</span>
             </div>
             {data.evmTxs.length === 0 ? (
               <Empty>None in the indexed blocks.</Empty>
@@ -140,7 +154,7 @@ function Forms({ account, network }: { account: Account; network: Network }) {
           {account.ethDerived ? "Ethereum key (the account was created from an EVM address)" : "Native Substrate key"}
         </Field>
       </Fields>
-      {account.contract ? null : account.ethDerived ? (
+      {account.contract || account.code ? null : account.ethDerived ? (
         <p className="note">
           <strong>Funding this MetaMask account:</strong> send {network.token} to the Substrate address{" "}
           <span className="mono">{account.ss58}</span> from any Substrate wallet. The balance then shows in MetaMask for{" "}
@@ -174,9 +188,6 @@ function ContractInfo({ contract }: { contract: Contract }) {
               extrinsic {contract.block}-{contract.extrinsic}
             </span>
           </Link>
-        </Field>
-        <Field name="Source">
-          <span className="faint">Not verified yet. Source verification is coming to PotScan.</span>
         </Field>
       </Fields>
     </section>

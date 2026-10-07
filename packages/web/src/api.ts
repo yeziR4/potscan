@@ -82,6 +82,8 @@ export type EvmTx = {
   gasUsed: string;
   contractAddress?: string;
   logCount: number;
+  /** The called function, when the target contract is verified. */
+  method?: string;
 };
 
 export type Contract = { address: string; vm: "evm" | "wasm"; deployer: string; block: number; extrinsic: number };
@@ -90,7 +92,44 @@ export type Overview = { indexer: IndexerState; blocks: Block[]; evmTxs: EvmTx[]
 
 export type MappedAddress = { evm: string; accountId: string; ss58: string; ethDerived: boolean };
 
-export type Account = MappedAddress & { contract?: Contract; extrinsics: Extrinsic[]; evmTxs: EvmTx[] };
+export type OptimizerMode = "0" | "1" | "2" | "3" | "s" | "z";
+
+export type Verified = {
+  codeHash: string;
+  contractName: string;
+  file: string;
+  compiler: string;
+  optimizer: { enabled: boolean; mode: OptimizerMode };
+  sources: Record<string, string>;
+  abi: AbiEntry[];
+  sourceHash: string;
+  firstAddress: string;
+  verifiedAt: number;
+  attestation?: { tx: string; attester: string; registry: string };
+};
+
+export type AbiEntry = { type: string; name?: string; inputs?: { name: string; type: string }[]; stateMutability?: string };
+
+export type Account = MappedAddress & {
+  contract?: Contract;
+  code?: { hash: string; verified?: Verified };
+  registry?: string;
+  extrinsics: Extrinsic[];
+  evmTxs: EvmTx[];
+};
+
+export type VerifyReply =
+  | { match: true; codeHash: string; compiler: string; attestation?: Verified["attestation"]; attestationError?: string; onChainRegistry: boolean }
+  | { match: false; reason: string; compiler?: string; compiledHash?: string; deployedHash?: string };
+
+export async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const reply = (await response.json().catch(() => {
+    throw new Error("The PotScan API is not reachable");
+  })) as T & { error?: string };
+  if (!response.ok) throw new Error(reply.error ?? `Request failed (${response.status})`);
+  return reply;
+}
 
 export class NotFound extends Error {}
 

@@ -105,7 +105,19 @@ export function TxPage({ network, hash }: { network: Network; hash: string }) {
           <Field name="Nonce">
             <span className="num">{tx.nonce}</span>
           </Field>
-          <Field name="Input" hint={selector ? `Function selector ${selector}` : undefined}>
+          {selector && (
+            <Field name="Function" hint={`Selector ${selector}`}>
+              {tx.method ? (
+                <span className="mono">{tx.method}</span>
+              ) : (
+                <span className="faint">
+                  Unknown until the contract is verified.{" "}
+                  {tx.to && <Link to={`/account/${tx.to}`}>Verify it</Link>}
+                </span>
+              )}
+            </Field>
+          )}
+          <Field name="Input">
             <span className="mono">{tx.input === "0x" ? <span className="faint">empty (plain transfer)</span> : tx.input}</span>
           </Field>
           <Field name="Logs">
