@@ -1,0 +1,9 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.30"
+remappings = ["forge-std/=lib/forge-std/src/"]
+
+# Forge runs the logic tests on the EVM. Deployments to pallet-revive are compiled to PolkaVM with resolc
+# by scripts/deploy.ts, because forge's own compiler output is EVM bytecode.
