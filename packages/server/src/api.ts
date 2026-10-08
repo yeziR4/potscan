@@ -159,7 +159,8 @@ export function createApi(deps: ApiDeps) {
       let attestationError: string | undefined;
       if (attester) {
         try {
-          record.attestation = await attester.attest(address, result.sourceHash, result.compiler, `${deps.publicUrl}/account/${address}`);
+          const sourceUri = `${deps.publicUrl}/account/${address}?network=${net.id}`;
+          record.attestation = await attester.attest(address, result.sourceHash, result.compiler, sourceUri);
           deps.verified.save(net.id, record);
         } catch (e) {
           attestationError = (e as Error).message;

@@ -9,5 +9,5 @@ export async function compileContract(file: string, name: string): Promise<{ byt
   if (errors.length) throw new Error(errors.map(e => e.formattedMessage).join("\n"));
   const contract = output.contracts[file]?.[name];
   if (!contract) throw new Error(`${name} not found in ${file}`);
-  return { bytecode: `0x${contract.evm.bytecode.object}`, abi: contract.abi, compiler: `resolc ${version()}` };
+  return { bytecode: `0x${contract.evm.bytecode.object}`, abi: contract.abi, compiler: `resolc ${version().trim()}` };
 }

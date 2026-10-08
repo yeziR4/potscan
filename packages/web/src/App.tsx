@@ -33,7 +33,10 @@ const NAV: [string, string, Route["page"][]][] = [
 
 export function App() {
   const [networks, setNetworks] = useState<Network[]>([]);
-  const [networkId, setNetworkId] = useState(() => stored("potscan.network") ?? "portaldot-v3");
+  // A shared link names its network (?network=…); otherwise use the viewer's last choice.
+  const [networkId, setNetworkId] = useState(
+    () => new URLSearchParams(location.search).get("network") ?? stored("potscan.network") ?? "portaldot-v3",
+  );
   const [theme, setTheme] = useState(() => stored("potscan.theme") ?? "dark");
 
   useEffect(() => {
@@ -49,6 +52,12 @@ export function App() {
   const chooseNetwork = (id: string) => {
     setNetworkId(id);
     store("potscan.network", id);
+    // Drop a stale ?network= so the address bar never contradicts the selector.
+    const url = new URL(location.href);
+    if (url.searchParams.has("network")) {
+      url.searchParams.set("network", id);
+      history.replaceState(null, "", url);
+    }
   };
 
   return (
