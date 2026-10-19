@@ -18,7 +18,7 @@ Early development.
 
 | Piece | State |
 | --- | --- |
-| Address mapper (EVM â†” Substrate) | Done, tested against addresses published for the V3 testnet |
+| Address mapper (EVM ↔ Substrate) | Done, tested against addresses published for the V3 testnet |
 | Network status, checked every minute, 24 h history | Done |
 | Indexer: blocks, extrinsics, events, Solidity transactions, contract deployments (Revive and ink!) | Done |
 | Explorer pages and search | Done |
@@ -47,7 +47,7 @@ While the Portaldot testnet is unavailable, PotScan also tracks Polkadot Hub Tes
 
 ## Develop
 
-Requires Node â‰¥ 22.13.
+Requires Node ≥ 22.13.
 
 ```bash
 npm install
