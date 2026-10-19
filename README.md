@@ -18,7 +18,7 @@ Early development.
 
 | Piece | State |
 | --- | --- |
-| Address mapper (EVM ↔ Substrate) | Done, tested against addresses published for the V3 testnet |
+| Address mapper (EVM â†” Substrate) | Done, tested against addresses published for the V3 testnet |
 | Network status, checked every minute, 24 h history | Done |
 | Indexer: blocks, extrinsics, events, Solidity transactions, contract deployments (Revive and ink!) | Done |
 | Explorer pages and search | Done |
@@ -35,7 +35,7 @@ Matches are then recorded in `VerificationRegistry` (`packages/contracts`), boun
 | Network | VerificationRegistry | Deployed in | PotScan attester |
 | --- | --- | --- | --- |
 | Polkadot Hub TestNet | `0xf869d5EB8103490260Dd9D765663C6608b96Fb8A` | `0xdf9169c5d86ce1d96ebcd69381fb6db5fac04e5d5cd0d643d08b8e200cd15a77` | `0xF636741Fa260225B51cDD69f8f2052CcD85755F0` |
-| Portaldot V3 Testnet | Waiting for the testnet to return | | |
+| Portaldot V3 Testnet | Next: waiting for tPOT for the attester key | | |
 
 The registry verified its own source through PotScan: attestation transaction `0x4110886fa07b00b6adc48568972f2528f7f3fffd7739c69119e58b377f566423`.
 
@@ -47,7 +47,7 @@ While the Portaldot testnet is unavailable, PotScan also tracks Polkadot Hub Tes
 
 ## Develop
 
-Requires Node ≥ 22.13.
+Requires Node â‰¥ 22.13.
 
 ```bash
 npm install

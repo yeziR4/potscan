@@ -16,14 +16,14 @@ export type Network = {
 };
 
 export const NETWORKS: Record<string, Network> = {
-  // github.com/ItsCogumellum/portaldot-v3-testnet-guide
+  // Endpoints announced by the Portaldot team on 17 Oct 2026, replacing the feso-apps.xyz ones.
   "portaldot-v3": {
     id: "portaldot-v3",
     name: "Portaldot V3 Testnet",
-    ws: "wss://testnetv3-node.feso-apps.xyz",
-    ethRpc: "https://testnetv3-eth-rpc.feso-apps.xyz",
+    ws: "wss://test-node-v3.portaldot.dev",
+    ethRpc: "https://test-evm-rpc-v3.portaldot.dev",
     evmChainId: 420420777,
-    token: "tPOTv3",
+    token: "tPOT",
     decimals: 14,
     ss58: 42,
     indexFrom: "genesis",
