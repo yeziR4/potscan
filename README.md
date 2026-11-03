@@ -62,6 +62,19 @@ npm test
 
 Production: `npm run build && npm start` serves the UI and API from one process on `PORT` (default 8787). Probe history is kept in SQLite at `POTSCAN_DB` (default `data/potscan.db`).
 
+## Deploy on Railway
+
+The repository includes a `Dockerfile` and `railway.json`.
+
+1. New project → Deploy from GitHub repo → `potscan`.
+2. Add a volume mounted at `/data` (the index and status history live there).
+3. Variables:
+   - `POTSCAN_PUBLIC_URL`: the public URL Railway gives the service, used in on-chain attestation links.
+   - `POTSCAN_KEY` (optional): a funded testnet key that records verifications in the registry. Without it, verification still works, off chain only.
+4. Settings → Networking → Generate domain.
+
+A fresh deployment indexes Portaldot V3 from genesis, which takes a few hours. The explorer is usable meanwhile, and the Status page shows progress.
+
 ## Layout
 
 | Package | What it holds |

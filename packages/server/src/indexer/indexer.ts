@@ -3,7 +3,7 @@ import type { ChainStore } from "./chainStore.ts";
 import { ChainReader } from "./reader.ts";
 import { hasReviveActivity, toRows } from "./transform.ts";
 
-const PARALLEL_READS = 4;
+const PARALLEL_READS = 8;
 const RETRY_MS = 5_000;
 const PRUNE_EVERY = 200;
 
