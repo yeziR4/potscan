@@ -35,9 +35,14 @@ Matches are then recorded in `VerificationRegistry` (`packages/contracts`), boun
 | Network | VerificationRegistry | Deployed in | PotScan attester |
 | --- | --- | --- | --- |
 | Polkadot Hub TestNet | `0xf869d5EB8103490260Dd9D765663C6608b96Fb8A` | `0xdf9169c5d86ce1d96ebcd69381fb6db5fac04e5d5cd0d643d08b8e200cd15a77` | `0xF636741Fa260225B51cDD69f8f2052CcD85755F0` |
-| Portaldot V3 Testnet | Next: waiting for tPOT for the attester key | | |
+| Portaldot V3 Testnet | `0xf869d5EB8103490260Dd9D765663C6608b96Fb8A` | `0xc2ac7d7c990de9fd6748cc93de6ec5b85804e4a399b2e3a9165da9162e8943a7` (block 303,856) | `0xF636741Fa260225B51cDD69f8f2052CcD85755F0` |
 
-The registry verified its own source through PotScan: attestation transaction `0x4110886fa07b00b6adc48568972f2528f7f3fffd7739c69119e58b377f566423`.
+On both networks the registry verified its own source through PotScan and recorded it on chain:
+
+- Portaldot V3: attestation `0x29247ea2bc06c9efe0af73da05ecd1cc0d893f5a3a9065e575792fa6ffd3c781` (block 306,083)
+- Polkadot Hub TestNet: attestation `0x4110886fa07b00b6adc48568972f2528f7f3fffd7739c69119e58b377f566423`
+
+Deploying on V3 reserves a storage deposit set by the runtime: 0.06 tPOT per byte (`revive.depositPerByte`), plus a 30 % code-hash lockup (`codeHashLockupDepositPercent`). For the 23,899-byte registry that is about 1,864 tPOT, held rather than spent, so a deployer needs roughly 1,910 tPOT available.
 
 Each Solidity transaction is linked to the Substrate extrinsic that carried it: pallet-revive keeps the Ethereum block number equal to the Substrate one, and the transaction index equal to the extrinsic index. The transaction page therefore shows both the Ethereum receipt and the native fee and balance events.
 

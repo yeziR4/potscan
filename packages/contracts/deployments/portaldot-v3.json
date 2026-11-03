@@ -1,0 +1,8 @@
+{
+  "VerificationRegistry": {
+    "address": "0xf869d5EB8103490260Dd9D765663C6608b96Fb8A",
+    "transaction": "0xc2ac7d7c990de9fd6748cc93de6ec5b85804e4a399b2e3a9165da9162e8943a7",
+    "compiler": "resolc 1.4.0+commit.ca3c770.llvm-22.1.5",
+    "deployer": "0xF636741Fa260225B51cDD69f8f2052CcD85755F0"
+  }
+}
