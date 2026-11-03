@@ -138,6 +138,16 @@ function Page({ route, network, networks }: { route: Route; network: Network; ne
       return <TxPage network={network} hash={route.hash} />;
     case "account":
       return <AccountPage network={network} query={route.query} />;
+    case "not-found":
+      return (
+        <>
+          <h1>Page not found</h1>
+          <p className="lede">
+            There is no page at <span className="mono">{route.path}</span>. Use the search box to find a block, transaction or
+            address, or go back to the <Link to="/">overview</Link>.
+          </p>
+        </>
+      );
   }
 }
 

@@ -8,7 +8,8 @@ export type Route =
   | { page: "block"; id: string }
   | { page: "extrinsic"; block: number; index: number }
   | { page: "tx"; hash: string }
-  | { page: "account"; query: string };
+  | { page: "account"; query: string }
+  | { page: "not-found"; path: string };
 
 export function parseRoute(path: string): Route {
   const [, first = "", rest = ""] = path.match(/^\/([^/]*)\/?(.*)$/) ?? [];
@@ -31,8 +32,11 @@ export function parseRoute(path: string): Route {
     case "account":
     case "address": // the mapper's original URL
       return { page: "account", query: arg };
-    default:
+    case "":
       return { page: "overview" };
+    // Keep in step with APP_ROUTES in packages/server/src/static.ts.
+    default:
+      return { page: "not-found", path };
   }
 }
 
