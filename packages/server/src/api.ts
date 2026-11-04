@@ -4,6 +4,7 @@ import { Interface } from "ethers";
 import type { Store } from "./db.ts";
 import type { ChainStore } from "./indexer/chainStore.ts";
 import type { Indexer } from "./indexer/indexer.ts";
+import { computeInsights, type Insights } from "./insights.ts";
 import { endpointStatus } from "./status.ts";
 import type { Attester } from "./verify/attester.ts";
 import { codeHashOf, deployedCode } from "./verify/code.ts";
@@ -72,8 +73,21 @@ async function methodOf(deps: ApiDeps, net: Network, to: unknown, input: unknown
   }
 }
 
+const INSIGHTS_TTL_MS = 5 * 60_000;
+
 export function createApi(deps: ApiDeps) {
   const { store, chain, indexers, networks } = deps;
+
+  // Insights read every indexed row, so they are computed at most every few minutes per network.
+  const insightsCache = new Map<string, { at: number; value?: Insights }>();
+  const insightsFor = async (net: Network) => {
+    const hit = insightsCache.get(net.id);
+    if (hit && Date.now() - hit.at < INSIGHTS_TTL_MS) return hit.value;
+    const facts = await indexers.get(net.id)?.chain?.facts().catch(() => undefined);
+    const value = computeInsights(store.db, net, facts);
+    insightsCache.set(net.id, { at: Date.now(), value });
+    return value;
+  };
   const routes: Record<string, Handler> = {
     "/api/networks": () => ok(Object.values(networks)),
 
@@ -95,6 +109,11 @@ export function createApi(deps: ApiDeps) {
         extrinsics: shapeAll(chain.latestExtrinsics(net.id, 12, true)),
         contracts: shapeAll(chain.contracts(net.id, 8)),
       }),
+
+    "/api/insights": async (_, net) => {
+      const insights = await insightsFor(net);
+      return insights ? ok(insights) : notFound("Enough history for insights");
+    },
 
     "/api/blocks": (url, net) => {
       const before = url.searchParams.get("before");

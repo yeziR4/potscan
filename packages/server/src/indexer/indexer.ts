@@ -43,6 +43,11 @@ export class Indexer {
     });
   }
 
+  /** The live connection, once established, for reads the index does not hold (runtime constants, validators). */
+  get chain(): ChainReader | undefined {
+    return this.reader;
+  }
+
   state(): IndexerState {
     return {
       network: this.network.id,

@@ -5,6 +5,20 @@ import type { Network } from "@potscan/core";
 import { compact } from "./transform.ts";
 import type { EthBlock, EthTransaction, RawBlock, RawEvent, RawExtrinsic } from "./types.ts";
 
+export type RuntimeFacts = {
+  specName: string;
+  specVersion: number;
+  /** In the native token's smallest unit, as decimal strings; undefined when the runtime lacks the pallet. */
+  depositPerByte?: string;
+  depositPerItem?: string;
+  /** A Perbill: parts per billion, so 300000000 is 30 %. */
+  codeHashLockupPercent?: string;
+  existentialDeposit?: string;
+  validators: string[];
+  era?: number;
+  eraPoints: { validator: string; points: number }[];
+};
+
 /** Reads finalized blocks from one network's Substrate and Ethereum RPCs into plain objects. */
 export class ChainReader {
   private constructor(
@@ -90,6 +104,36 @@ export class ChainReader {
       };
     });
     return { hash: b.hash, transactions };
+  }
+
+  /** Runtime settings and the validator set: what a deployment costs, and who produces blocks. */
+  async facts(): Promise<RuntimeFacts> {
+    const constant = (pallet: string, name: string) => {
+      const value = (this.api.consts as Record<string, Record<string, { toString(): string } | undefined> | undefined>)[pallet]?.[name];
+      return value === undefined ? undefined : value.toString();
+    };
+    const validators = this.api.query.session ? (await this.api.query.session.validators()).map(v => v.toString()) : [];
+    let era: number | undefined;
+    let points: { validator: string; points: number }[] = [];
+    if (this.api.query.staking?.activeEra) {
+      const active = await this.api.query.staking.activeEra();
+      if (active.isSome) {
+        era = active.unwrap().index.toNumber();
+        const reward = await this.api.query.staking.erasRewardPoints(era);
+        points = [...reward.individual.entries()].map(([who, p]) => ({ validator: who.toString(), points: p.toNumber() }));
+      }
+    }
+    return {
+      specName: this.api.runtimeVersion.specName.toString(),
+      specVersion: this.api.runtimeVersion.specVersion.toNumber(),
+      depositPerByte: constant("revive", "depositPerByte"),
+      depositPerItem: constant("revive", "depositPerItem"),
+      codeHashLockupPercent: constant("revive", "codeHashLockupDepositPercent"),
+      existentialDeposit: constant("balances", "existentialDeposit"),
+      validators,
+      era,
+      eraPoints: points.sort((a, b) => b.points - a.points),
+    };
   }
 
   async disconnect(): Promise<void> {
