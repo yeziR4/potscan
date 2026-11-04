@@ -12,7 +12,7 @@ const TYPES: Record<string, string> = {
 };
 
 /** First path segments the web app routes; must match parseRoute in packages/web/src/router.tsx. */
-const APP_ROUTES = new Set(["", "status", "blocks", "contracts", "block", "extrinsic", "tx", "account", "address"]);
+const APP_ROUTES = new Set(["", "explorer", "status", "blocks", "contracts", "block", "extrinsic", "tx", "account", "address"]);
 
 /**
  * Serves the built web app. App routes get index.html so a reload keeps working; any other path gets

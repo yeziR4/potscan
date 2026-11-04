@@ -5,6 +5,7 @@ import { BlockPage, BlocksPage } from "./pages/BlockPages.tsx";
 import { ContractsPage } from "./pages/ContractsPage.tsx";
 import { OverviewPage } from "./pages/OverviewPage.tsx";
 import { ExtrinsicPage, TxPage } from "./pages/TxPages.tsx";
+import { ReportPage } from "./report/ReportPage.tsx";
 import { Link, Router, useGo, type Route } from "./router.tsx";
 import { StatusPage } from "./StatusPage.tsx";
 
@@ -24,7 +25,8 @@ const store = (key: string, value: string) => {
 };
 
 const NAV: [string, string, Route["page"][]][] = [
-  ["/", "Overview", ["overview"]],
+  ["/", "Report", ["report"]],
+  ["/explorer", "Explorer", ["overview"]],
   ["/blocks", "Blocks", ["blocks", "block", "extrinsic", "tx"]],
   ["/contracts", "Contracts", ["contracts"]],
   ["/account", "Address mapper", ["account"]],
@@ -122,6 +124,8 @@ export function App() {
 
 function Page({ route, network, networks }: { route: Route; network: Network; networks: Network[] }) {
   switch (route.page) {
+    case "report":
+      return <ReportPage network={network} />;
     case "overview":
       return <OverviewPage network={network} />;
     case "status":

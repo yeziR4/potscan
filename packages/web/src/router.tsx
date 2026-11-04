@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type MouseEvent, type ReactNode } from "react";
 
 export type Route =
+  | { page: "report" }
   | { page: "overview" }
   | { page: "status" }
   | { page: "blocks" }
@@ -33,6 +34,8 @@ export function parseRoute(path: string): Route {
     case "address": // the mapper's original URL
       return { page: "account", query: arg };
     case "":
+      return { page: "report" };
+    case "explorer":
       return { page: "overview" };
     // Keep in step with APP_ROUTES in packages/server/src/static.ts.
     default:

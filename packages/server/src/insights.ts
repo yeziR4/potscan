@@ -42,7 +42,7 @@ export type Insights = {
     inkCalls: number;
     contracts: { evm: number; wasm: number };
     topCalls: { call: string; count: number }[];
-    topContracts: { address: string; calls: number }[];
+    topContracts: { address: string; label?: string; calls: number }[];
   };
   failures: {
     dispatchFailed: number;
@@ -132,7 +132,8 @@ export function computeInsights(db: DatabaseSync, network: Network, facts?: Runt
     if (e.pallet === "contracts") inkCalls++;
     if (!e.success) {
       if (h) h.failed++;
-      errorCounts.set(e.error ?? "Unknown", (errorCounts.get(e.error ?? "Unknown") ?? 0) + 1);
+      const error = readableError(e.error);
+      errorCounts.set(error, (errorCounts.get(error) ?? 0) + 1);
     }
     if (e.fee) fees.push(BigInt(e.fee));
   }
@@ -198,7 +199,7 @@ export function computeInsights(db: DatabaseSync, network: Network, facts?: Runt
         wasm: Number(contractsByVm.find(c => c.vm === "wasm")?.n ?? 0),
       },
       topCalls: top(callCounts, 6).map(([call, count]) => ({ call, count })),
-      topContracts: top(contractCalls, 5).map(([address, calls]) => ({ address, calls })),
+      topContracts: top(contractCalls, 5).map(([address, calls]) => ({ address, label: moduleAccountLabel(address), calls })),
     },
     failures: {
       dispatchFailed: [...errorCounts.values()].reduce((s, n) => s + n, 0),
@@ -229,6 +230,23 @@ export function moduleAccountLabel(address: string): string | undefined {
   if (bytes.length !== 20 || bytes.subarray(0, 4).toString("latin1") !== "modl") return undefined;
   const id = bytes.subarray(4, 12).toString("latin1").replace(/\0+$/, "");
   return /^[\x20-\x7e]+$/.test(id) && bytes.subarray(12).every(b => b === 0) ? `${id} module account` : undefined;
+}
+
+/**
+ * Module errors are stored as "Pallet.Error"; other dispatch errors arrive as their JSON form, such as
+ * {"token":"FundsUnavailable"}, and are rewritten to the same style ("Token.FundsUnavailable").
+ */
+export function readableError(error: string | null): string {
+  if (!error) return "Unknown";
+  if (!error.startsWith("{")) return error;
+  try {
+    const [kind, detail] = Object.entries(JSON.parse(error) as Record<string, unknown>)[0] ?? [];
+    if (!kind) return error;
+    const name = kind.charAt(0).toUpperCase() + kind.slice(1);
+    return typeof detail === "string" ? `${name}.${detail}` : name;
+  } catch {
+    return error;
+  }
 }
 
 function median(values: bigint[]): string | undefined {

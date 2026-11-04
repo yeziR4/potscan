@@ -131,6 +131,39 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
   return reply;
 }
 
+export type HourBucket = { at: number; blocks: number; avgBlockMs: number; maxBlockMs: number; txs: number; evm: number; failed: number };
+
+export type Insights = {
+  network: string;
+  generatedAt: number;
+  span: { firstBlock: number; lastBlock: number; blocks: number; since: number; until: number };
+  blockTime: { targetMs: number; avgMs: number; p50Ms: number; p95Ms: number; slowShare: number; longestGap?: { block: number; ms: number; at: number } };
+  hours: HourBucket[];
+  activity: {
+    signed: number;
+    accounts: number;
+    evmTxs: number;
+    evmReverted: number;
+    nativeTransfers: number;
+    inkCalls: number;
+    contracts: { evm: number; wasm: number };
+    topCalls: { call: string; count: number }[];
+    topContracts: { address: string; label?: string; calls: number }[];
+  };
+  failures: {
+    dispatchFailed: number;
+    byError: { error: string; count: number }[];
+    silentReverts: number;
+    revertTargets: { address: string; label?: string; count: number }[];
+  };
+  costs: {
+    fees: { count: number; median?: string; average?: string };
+    deposits: { count: number; median?: string; largest?: string };
+    runtime?: { depositPerByte?: string; depositPerItem?: string; codeHashLockupPercent?: number; existentialDeposit?: string };
+  };
+  validators?: { count: number; era?: number; points: { validator: string; points: number }[] };
+};
+
 export class NotFound extends Error {}
 
 export async function getJson<T>(path: string): Promise<T> {

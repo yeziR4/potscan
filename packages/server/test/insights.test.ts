@@ -4,7 +4,7 @@ import { NETWORKS } from "@potscan/core";
 import { Store } from "../src/db.ts";
 import { ChainStore } from "../src/indexer/chainStore.ts";
 import type { BlockRows } from "../src/indexer/types.ts";
-import { computeInsights, moduleAccountLabel } from "../src/insights.ts";
+import { computeInsights, moduleAccountLabel, readableError } from "../src/insights.ts";
 
 const net = NETWORKS["portaldot-v3"]!;
 const T0 = Date.UTC(2026, 10, 1, 10, 0, 0);
@@ -81,6 +81,13 @@ test("an index without consecutive timestamped blocks has no insights yet", () =
   const store = new Store(":memory:");
   new ChainStore(store.db).saveBlock(net.id, block(0, 0));
   assert.equal(computeInsights(store.db, net), undefined);
+});
+
+test("non-module dispatch errors read like module errors", () => {
+  assert.equal(readableError('{"token":"FundsUnavailable"}'), "Token.FundsUnavailable");
+  assert.equal(readableError('{"badOrigin":null}'), "BadOrigin");
+  assert.equal(readableError("revive.StorageDepositNotEnoughFunds"), "revive.StorageDepositNotEnoughFunds");
+  assert.equal(readableError(null), "Unknown");
 });
 
 test("module accounts are named; ordinary addresses are not", () => {
