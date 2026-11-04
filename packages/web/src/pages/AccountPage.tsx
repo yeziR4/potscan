@@ -57,7 +57,7 @@ export function AccountPage({ network, query }: { network: Network; query: strin
         <SourcePanel
           network={network}
           address={data.evm}
-          verified={data.code.verified}
+          code={data.code}
           registry={data.registry}
           onVerified={() => setReloads(n => n + 1)}
         />

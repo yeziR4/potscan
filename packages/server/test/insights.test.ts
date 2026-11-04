@@ -83,6 +83,26 @@ test("an index without consecutive timestamped blocks has no insights yet", () =
   assert.equal(computeInsights(store.db, net), undefined);
 });
 
+test("contracts are counted by how their code was built", () => {
+  const store = seeded();
+  const chain = new ChainStore(store.db);
+  chain.saveCodeKind(net.id, "0x01", "evm", "0.8.24");
+  chain.saveCodeKind(net.id, "0x02", "evm", "0.8.24");
+  chain.saveCodeKind(net.id, "0x03", "evm", "0.8.20");
+  chain.saveCodeKind(net.id, "0x04", "polkavm", undefined);
+  chain.saveCodeKind(net.id, "0x05", "empty", undefined);
+  const { codeBuild } = computeInsights(store.db, net)!.activity;
+  assert.deepEqual(codeBuild, {
+    classified: 4,
+    polkavm: 1,
+    evm: 3,
+    solc: [
+      { version: "0.8.24", count: 2 },
+      { version: "0.8.20", count: 1 },
+    ],
+  });
+});
+
 test("non-module dispatch errors read like module errors", () => {
   assert.equal(readableError('{"token":"FundsUnavailable"}'), "Token.FundsUnavailable");
   assert.equal(readableError('{"badOrigin":null}'), "BadOrigin");

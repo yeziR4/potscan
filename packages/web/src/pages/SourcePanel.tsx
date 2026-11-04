@@ -1,6 +1,16 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { selectorOf } from "../selector.ts";
-import { postJson, withNetwork, type AbiEntry, type Network, type OptimizerMode, type Verified, type VerifyReply } from "../api.ts";
+import {
+  postJson,
+  withNetwork,
+  type AbiEntry,
+  type Account,
+  type CodeKind,
+  type Network,
+  type OptimizerMode,
+  type Verified,
+  type VerifyReply,
+} from "../api.ts";
 import { dateTime } from "../format.ts";
 import { Copy, Field, Fields, Hash } from "../ui.tsx";
 
@@ -14,26 +24,42 @@ const MODES: { value: OptimizerMode | "off"; label: string }[] = [
   { value: "off", label: "Optimizer disabled" },
 ];
 
-export function SourcePanel({ network, address, verified, registry, onVerified }: {
+export function SourcePanel({ network, address, code, registry, onVerified }: {
   network: Network;
   address: string;
-  verified?: Verified;
+  code: NonNullable<Account["code"]>;
   registry?: string;
   onVerified: () => void;
 }) {
-  return verified ? <VerifiedSource verified={verified} registry={registry} /> : <VerifyForm network={network} address={address} onVerified={onVerified} />;
+  return code.verified ? (
+    <VerifiedSource verified={code.verified} registry={registry} />
+  ) : (
+    <VerifyForm network={network} address={address} kind={code.kind ?? "polkavm"} solc={code.solc} onVerified={onVerified} />
+  );
 }
+
+const MEANING = {
+  exact:
+    "this source, compiled with these settings, produces exactly the code deployed here, including solc's metadata hash, which fingerprints the source files themselves.",
+  bytecodeEvm:
+    "this source, compiled with these settings, produces exactly the deployed code. Only solc's metadata hash differs, which happens when comments or file paths differ from the original build.",
+  bytecodePolkaVm:
+    "this source, compiled with these settings, produces exactly the code deployed here. PolkaVM code carries no fingerprint of the source text, so comments and formatting are not compared.",
+};
 
 function VerifiedSource({ verified, registry }: { verified: Verified; registry?: string }) {
   const files = Object.keys(verified.sources);
   const [file, setFile] = useState(verified.file in verified.sources ? verified.file : files[0]!);
   const functions = verified.abi.filter((e): e is AbiEntry & { name: string } => e.type === "function" && Boolean(e.name));
+  const vm = verified.vm ?? "polkavm";
+  const exact = verified.matchKind === "exact";
 
   return (
     <section className="panel" aria-labelledby="source">
       <div className="panel-head">
         <h2 id="source">Source</h2>
-        <span className="state up">Verified: bytecode match</span>
+        <span className="state up">Verified: {exact ? "exact match" : "bytecode match"}</span>
+        <span className="meta">{vm === "evm" ? "EVM bytecode · solc" : "PolkaVM · resolc"}</span>
       </div>
       <Fields>
         <Field name="Contract">
@@ -42,7 +68,13 @@ function VerifiedSource({ verified, registry }: { verified: Verified; registry?:
           </span>
         </Field>
         <Field name="Compiler">{verified.compiler}</Field>
-        <Field name="Optimizer">{verified.optimizer.enabled ? `mode ${verified.optimizer.mode}` : "disabled"}</Field>
+        <Field name="Settings">
+          {vm === "evm" && verified.evm
+            ? `optimizer ${verified.optimizer.enabled ? `on, ${verified.evm.runs} runs` : "off"} · EVM ${verified.evm.evmVersion ?? "compiler default"}${verified.evm.viaIR ? " · via IR" : ""}`
+            : verified.optimizer.enabled
+              ? `optimizer mode ${verified.optimizer.mode}`
+              : "optimizer off"}
+        </Field>
         <Field name="Code hash" hint="keccak-256 of the deployed code">
           <Hash value={verified.codeHash} full />
         </Field>
@@ -61,9 +93,8 @@ function VerifiedSource({ verified, registry }: { verified: Verified; registry?:
         </Field>
       </Fields>
       <p className="note">
-        <strong>What a match means:</strong> this source, compiled with these settings, produces exactly the code deployed
-        here. PolkaVM code carries no fingerprint of the source text, so comments and formatting are not compared. Every
-        contract with the same code hash shares this verification.
+        <strong>What this means:</strong> {exact ? MEANING.exact : vm === "evm" ? MEANING.bytecodeEvm : MEANING.bytecodePolkaVm}{" "}
+        Every contract with the same code hash shares this verification.
       </p>
 
       {files.length > 1 && (
@@ -119,10 +150,22 @@ function VerifiedSource({ verified, registry }: { verified: Verified; registry?:
   );
 }
 
-function VerifyForm({ network, address, onVerified }: { network: Network; address: string; onVerified: () => void }) {
+const EVM_VERSIONS = ["london", "paris", "shanghai", "cancun", "prague"];
+
+function VerifyForm({ network, address, kind, solc, onVerified }: {
+  network: Network;
+  address: string;
+  kind: CodeKind;
+  solc?: string;
+  onVerified: () => void;
+}) {
   const [files, setFiles] = useState<Record<string, string>>({});
   const [contractName, setContractName] = useState("");
   const [mode, setMode] = useState<OptimizerMode | "off">("z");
+  const [evmOptimizer, setEvmOptimizer] = useState(true);
+  const [runs, setRuns] = useState("200");
+  const [evmVersion, setEvmVersion] = useState("");
+  const [viaIR, setViaIR] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState<VerifyReply>();
   const [error, setError] = useState<string>();
@@ -155,7 +198,9 @@ function VerifyForm({ network, address, onVerified }: { network: Network; addres
         address,
         sources: files,
         contractName,
-        optimizer: mode === "off" ? { enabled: false, mode: "z" } : { enabled: true, mode },
+        optimizer:
+          kind === "evm" ? { enabled: evmOptimizer, mode: "z" } : mode === "off" ? { enabled: false, mode: "z" } : { enabled: true, mode },
+        evm: { runs: Number(runs) || 0, evmVersion: evmVersion || undefined, viaIR },
       });
       setReply(result);
       if (result.match) onVerified();
@@ -171,10 +216,20 @@ function VerifyForm({ network, address, onVerified }: { network: Network; addres
     <section className="panel" aria-labelledby="verify">
       <div className="panel-head">
         <h2 id="verify">Verify source</h2>
-        <span className="meta">Solidity compiled to PolkaVM with resolc</span>
+        <span className="meta">
+          {kind === "evm" ? `EVM bytecode · solc ${solc ?? "version unknown"}` : "PolkaVM · resolc 1.4.0"}
+        </span>
       </div>
       <form className="verify" onSubmit={submit}>
         <p className="muted m0">
+          {kind === "evm" ? (
+            <>
+              This contract is EVM bytecode. PotScan read the compiler from its metadata,{" "}
+              <strong>{solc ? `solc ${solc}` : "but none is recorded"}</strong>, and will compile with exactly that release.{" "}
+            </>
+          ) : (
+            <>This contract is PolkaVM code, built with resolc. </>
+          )}
           Add every file the contract needs, including imports: PotScan compiles only what you send. Use the settings you
           deployed with.
         </p>
@@ -228,19 +283,64 @@ function VerifyForm({ network, address, onVerified }: { network: Network; addres
             </label>
             <input id="contract-name" className="input" value={contractName} onChange={e => setContractName(e.target.value)} placeholder="Token" />
           </div>
-          <div>
-            <label className="field-label" htmlFor="optimizer">
-              Optimizer
-            </label>
-            <select id="optimizer" className="select" value={mode} onChange={e => setMode(e.target.value as OptimizerMode | "off")}>
-              {MODES.map(m => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {kind === "polkavm" ? (
+            <div>
+              <label className="field-label" htmlFor="optimizer">
+                Optimizer
+              </label>
+              <select id="optimizer" className="select" value={mode} onChange={e => setMode(e.target.value as OptimizerMode | "off")}>
+                {MODES.map(m => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="field-label" htmlFor="runs">
+                Optimizer runs
+              </label>
+              <div className="inline-fields">
+                <label className="check">
+                  <input type="checkbox" checked={evmOptimizer} onChange={e => setEvmOptimizer(e.target.checked)} /> On
+                </label>
+                <input
+                  id="runs"
+                  className="input runs-input"
+                  inputMode="numeric"
+                  value={runs}
+                  onChange={e => setRuns(e.target.value.replace(/\D/g, ""))}
+                  disabled={!evmOptimizer}
+                />
+              </div>
+            </div>
+          )}
         </div>
+
+        {kind === "evm" && (
+          <div className="verify-settings">
+            <div>
+              <label className="field-label" htmlFor="evm-version">
+                EVM version
+              </label>
+              <select id="evm-version" className="select" value={evmVersion} onChange={e => setEvmVersion(e.target.value)}>
+                <option value="">Compiler default</option>
+                {EVM_VERSIONS.map(v => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <span className="field-label">Pipeline</span>
+              <label className="check">
+                <input type="checkbox" checked={viaIR} onChange={e => setViaIR(e.target.checked)} /> Compiled via IR (viaIR)
+              </label>
+            </div>
+          </div>
+        )}
 
         <div>
           <button className="button" type="submit" disabled={busy || names.length === 0 || !contractName}>

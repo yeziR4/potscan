@@ -1,7 +1,9 @@
 import { createServer } from "node:http";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { NETWORKS } from "@potscan/core";
 import { createApi } from "./api.ts";
+import { startCodeCensus } from "./codeCensus.ts";
 import { Store } from "./db.ts";
 import { ChainStore } from "./indexer/chainStore.ts";
 import { Indexer } from "./indexer/indexer.ts";
@@ -22,7 +24,10 @@ const chain = new ChainStore(store.db);
 startMonitor(store, Object.values(NETWORKS), PROBE_INTERVAL_MS);
 
 const indexers = new Map(Object.values(NETWORKS).map(n => [n.id, new Indexer(chain, n)]));
-if (process.env.POTSCAN_INDEX !== "off") indexers.forEach(indexer => indexer.start());
+if (process.env.POTSCAN_INDEX !== "off") {
+  indexers.forEach(indexer => indexer.start());
+  startCodeCensus(chain, Object.values(NETWORKS));
+}
 
 // Attesting needs a funded key (POTSCAN_KEY) and a VerificationRegistry deployment for the network.
 const attesters = new Map(
@@ -38,7 +43,7 @@ const api = createApi({
   chain,
   indexers,
   networks: NETWORKS,
-  verifier: new Verifier(),
+  verifier: new Verifier(process.env.POTSCAN_SOLC_DIR ?? join(dirname(DB_PATH), "solc")),
   verified: new VerifiedStore(store.db),
   attesters,
   publicUrl: PUBLIC_URL,

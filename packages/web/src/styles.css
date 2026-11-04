@@ -766,6 +766,24 @@ h2 {
 .verify-result .fields dt:first-of-type + dd {
   border-top: 0;
 }
+.inline-fields {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.runs-input {
+  width: 110px;
+}
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  cursor: pointer;
+}
+.check input {
+  accent-color: var(--brand-indigo);
+}
 .down-text {
   color: var(--down);
   font-weight: 500;
@@ -934,6 +952,26 @@ h2 {
   background: linear-gradient(90deg, var(--brand-indigo), var(--brand-blue)) no-repeat;
   background-size: var(--w) 100%;
   background-color: var(--field-empty);
+}
+
+.split-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  margin-bottom: 12px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.split-evm {
+  background: var(--brand-gradient);
+}
+.split-pvm {
+  background: var(--warm);
+}
+.rank li > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .story-figure {

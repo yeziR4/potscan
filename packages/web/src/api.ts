@@ -94,12 +94,19 @@ export type MappedAddress = { evm: string; accountId: string; ss58: string; ethD
 
 export type OptimizerMode = "0" | "1" | "2" | "3" | "s" | "z";
 
+export type CodeKind = "polkavm" | "evm";
+
+export type EvmSettings = { runs: number; evmVersion?: string; viaIR: boolean };
+
 export type Verified = {
   codeHash: string;
+  vm?: CodeKind;
+  matchKind?: "exact" | "bytecode";
   contractName: string;
   file: string;
   compiler: string;
   optimizer: { enabled: boolean; mode: OptimizerMode };
+  evm?: EvmSettings;
   sources: Record<string, string>;
   abi: AbiEntry[];
   sourceHash: string;
@@ -112,14 +119,23 @@ export type AbiEntry = { type: string; name?: string; inputs?: { name: string; t
 
 export type Account = MappedAddress & {
   contract?: Contract;
-  code?: { hash: string; verified?: Verified };
+  code?: { hash: string; kind?: CodeKind; solc?: string; verified?: Verified };
   registry?: string;
   extrinsics: Extrinsic[];
   evmTxs: EvmTx[];
 };
 
 export type VerifyReply =
-  | { match: true; codeHash: string; compiler: string; attestation?: Verified["attestation"]; attestationError?: string; onChainRegistry: boolean }
+  | {
+      match: true;
+      matchKind: "exact" | "bytecode";
+      vm: CodeKind;
+      codeHash: string;
+      compiler: string;
+      attestation?: Verified["attestation"];
+      attestationError?: string;
+      onChainRegistry: boolean;
+    }
   | { match: false; reason: string; compiler?: string; compiledHash?: string; deployedHash?: string };
 
 export async function postJson<T>(path: string, body: unknown): Promise<T> {
@@ -149,6 +165,7 @@ export type Insights = {
     contracts: { evm: number; wasm: number };
     topCalls: { call: string; count: number }[];
     topContracts: { address: string; label?: string; calls: number }[];
+    codeBuild: { classified: number; polkavm: number; evm: number; solc: { version: string; count: number }[] };
   };
   failures: {
     dispatchFailed: number;

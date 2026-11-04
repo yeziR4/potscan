@@ -37,7 +37,12 @@ Findings on the V3 testnet as of 4 November 2026: two validators produce every b
 
 ## Verification
 
-PotScan compiles the submitted Solidity with Parity's `resolc` and compares the result with the code the chain returns for the address. A match means the source, with those settings, produces exactly the deployed code. PolkaVM code carries no fingerprint of the source text, so comments and formatting are not compared. Verification is stored by code hash, so it covers every contract running the same code.
+pallet-revive runs two kinds of code, and PotScan verifies both. It reads the deployed code first and picks the compiler it calls for:
+
+- **EVM bytecode (solc).** 97% of contracts on V3. The solc release is read from the metadata solc appends to the bytecode, and that exact release is downloaded from `binaries.soliditylang.org`, checked against its published SHA-256, cached, and run in a worker. Immutables are masked before comparing. An **exact** match includes solc's metadata hash, which fingerprints the source files; a **bytecode** match means identical code with different metadata, as when comments or paths differ.
+- **PolkaVM (resolc).** Compiled with Parity's `resolc`. PolkaVM code carries no fingerprint of the source text, so every match is a bytecode match.
+
+Verification is stored by code hash, so it covers every contract running the same code, and an exact match is never replaced by a weaker one.
 
 Imports are never read from the server: only the submitted files are compiled. (`@parity/resolc`'s `compile()` helper resolves imports from disk, which is why PotScan calls the compiler directly.)
 

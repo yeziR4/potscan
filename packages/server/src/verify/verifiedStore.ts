@@ -1,12 +1,17 @@
 import type { DatabaseSync } from "node:sqlite";
-import type { OptimizerMode } from "./verifier.ts";
+import type { CodeKind } from "./evmMetadata.ts";
+import type { VerifyRequest } from "./verifier.ts";
 
 export type Verified = {
   codeHash: string;
+  /** Records saved before EVM support have neither field; they were PolkaVM bytecode matches. */
+  vm?: CodeKind;
+  matchKind?: "exact" | "bytecode";
   contractName: string;
   file: string;
   compiler: string;
-  optimizer: { enabled: boolean; mode: OptimizerMode };
+  optimizer: VerifyRequest["optimizer"];
+  evm?: VerifyRequest["evm"];
   sources: Record<string, string>;
   abi: unknown[];
   sourceHash: string;

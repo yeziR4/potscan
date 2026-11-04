@@ -43,6 +43,8 @@ export type Insights = {
     contracts: { evm: number; wasm: number };
     topCalls: { call: string; count: number }[];
     topContracts: { address: string; label?: string; calls: number }[];
+    /** How Revive contracts were compiled, from their code: PolkaVM (resolc) or EVM bytecode (solc). */
+    codeBuild: { classified: number; polkavm: number; evm: number; solc: { version: string; count: number }[] };
   };
   failures: {
     dispatchFailed: number;
@@ -172,6 +174,11 @@ export function computeInsights(db: DatabaseSync, network: Network, facts?: Runt
   ).map(r => BigInt(String((JSON.parse(r.data) as { amount: string | number }).amount)));
 
   const contractsByVm = db.prepare(`SELECT vm, COUNT(*) AS n FROM contracts WHERE network = ? GROUP BY vm`).all(network.id) as { vm: string; n: number }[];
+  const codeKinds = db.prepare(`SELECT kind, COUNT(*) AS n FROM contract_code WHERE network = ? GROUP BY kind`).all(network.id) as { kind: string; n: number }[];
+  const solcVersions = db
+    .prepare(`SELECT solc, COUNT(*) AS n FROM contract_code WHERE network = ? AND solc IS NOT NULL GROUP BY solc ORDER BY n DESC LIMIT 4`)
+    .all(network.id) as { solc: string; n: number }[];
+  const kindCount = (kind: string) => Number(codeKinds.find(k => k.kind === kind)?.n ?? 0);
   const top = <K>(m: Map<K, number>, n: number) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
 
   return {
@@ -200,6 +207,12 @@ export function computeInsights(db: DatabaseSync, network: Network, facts?: Runt
       },
       topCalls: top(callCounts, 6).map(([call, count]) => ({ call, count })),
       topContracts: top(contractCalls, 5).map(([address, calls]) => ({ address, label: moduleAccountLabel(address), calls })),
+      codeBuild: {
+        classified: kindCount("polkavm") + kindCount("evm"),
+        polkavm: kindCount("polkavm"),
+        evm: kindCount("evm"),
+        solc: solcVersions.map(s => ({ version: s.solc, count: Number(s.n) })),
+      },
     },
     failures: {
       dispatchFailed: [...errorCounts.values()].reduce((s, n) => s + n, 0),

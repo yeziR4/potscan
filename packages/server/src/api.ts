@@ -8,6 +8,7 @@ import { computeInsights, type Insights } from "./insights.ts";
 import { endpointStatus } from "./status.ts";
 import type { Attester } from "./verify/attester.ts";
 import { codeHashOf, deployedCode } from "./verify/code.ts";
+import { codeKind, readMetadata } from "./verify/evmMetadata.ts";
 import type { Verified, VerifiedStore } from "./verify/verifiedStore.ts";
 import { validateRequest, type Verifier } from "./verify/verifier.ts";
 
@@ -53,9 +54,12 @@ const limitParam = (url: URL, fallback: number) => Math.min(100, Math.max(1, Num
 /** What the account page needs about a contract's code: its hash and, when known, the verified source. */
 async function codeInfo(deps: ApiDeps, net: Network, evm: string) {
   try {
-    const hash = codeHashOf(await deployedCode(net, evm));
+    const code = await deployedCode(net, evm);
+    const hash = codeHashOf(code);
     if (!hash) return undefined;
-    return { hash, verified: deps.verified.byCodeHash(net.id, hash) };
+    // The verify form needs to know which compiler applies, and for EVM code which solc release built it.
+    const kind = codeKind(code);
+    return { hash, kind, solc: kind === "evm" ? readMetadata(code)?.solc : undefined, verified: deps.verified.byCodeHash(net.id, hash) };
   } catch {
     return undefined;
   }
@@ -159,12 +163,21 @@ export function createApi(deps: ApiDeps) {
       const result = await deps.verifier.verify(request, code);
       if (!result.match) return ok(result);
 
+      // An exact match is the stronger claim; a later bytecode-only match for the same code must not replace it.
+      const existing = deps.verified.byCodeHash(net.id, result.codeHash);
+      if (existing?.matchKind === "exact" && result.matchKind === "bytecode") {
+        return ok({ ...result, matchKind: "exact", attestation: existing.attestation, onChainRegistry: Boolean(deps.attesters.get(net.id)), alreadyVerified: true });
+      }
+
       const record: Verified = {
         codeHash: result.codeHash,
+        vm: result.vm,
+        matchKind: result.matchKind,
         contractName: request.contractName,
         file: result.file,
         compiler: result.compiler,
         optimizer: request.optimizer,
+        evm: result.vm === "evm" ? request.evm : undefined,
         sources: request.sources,
         abi: result.abi,
         sourceHash: result.sourceHash,

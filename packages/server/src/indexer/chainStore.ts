@@ -41,6 +41,11 @@ export class ChainStore {
         block INTEGER NOT NULL, extrinsic INTEGER NOT NULL,
         PRIMARY KEY (network, address)
       );
+      -- What each Revive contract's code is: PolkaVM (resolc) or EVM bytecode (solc), read once from the chain.
+      CREATE TABLE IF NOT EXISTS contract_code (
+        network TEXT NOT NULL, address TEXT NOT NULL, kind TEXT NOT NULL, solc TEXT,
+        PRIMARY KEY (network, address)
+      );
     `);
   }
 
@@ -157,6 +162,32 @@ export class ChainStore {
         limit,
       ),
     };
+  }
+
+  /** Revive contracts whose code has not been classified yet, oldest first. */
+  unclassifiedContracts(network: string, limit: number): string[] {
+    return this.all(
+      `SELECT c.address FROM contracts c LEFT JOIN contract_code k ON k.network = c.network AND k.address = c.address
+       WHERE c.network = ? AND c.vm = 'evm' AND k.address IS NULL ORDER BY c.block LIMIT ?`,
+      network,
+      limit,
+    ).map(r => String(r.address));
+  }
+
+  saveCodeKind(network: string, address: string, kind: string, solc: string | undefined): void {
+    this.db.prepare(`INSERT OR REPLACE INTO contract_code VALUES (?, ?, ?, ?)`).run(network, address, kind, solc ?? null);
+  }
+
+  /** How Revive contracts were built: PolkaVM versus EVM bytecode, and which solc releases. */
+  codeCensus(network: string): { kinds: Record<string, number>; solc: { version: string; count: number }[] } {
+    const kinds = Object.fromEntries(
+      this.all(`SELECT kind, COUNT(*) AS n FROM contract_code WHERE network = ? GROUP BY kind`, network).map(r => [String(r.kind), Number(r.n)]),
+    );
+    const solc = this.all(
+      `SELECT solc, COUNT(*) AS n FROM contract_code WHERE network = ? AND solc IS NOT NULL GROUP BY solc ORDER BY n DESC LIMIT 5`,
+      network,
+    ).map(r => ({ version: String(r.solc), count: Number(r.n) }));
+    return { kinds, solc };
   }
 
   /** Finds what a 32-byte hash refers to. */

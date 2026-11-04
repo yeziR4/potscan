@@ -107,6 +107,44 @@ export function ReportPage({ network }: { network: Network }) {
               {activity.contracts.wasm > 0 ? ` and ${count(activity.contracts.wasm)} ink! contracts` : ""} have been deployed.
               {activity.contracts.wasm === 0 && " Nobody has deployed an ink! contract yet: the Solidity path is where builders are."}
             </p>
+            {activity.codeBuild.classified > 0 && (
+              <>
+                <p className="chapter-text">
+                  <strong>
+                    {pct(activity.codeBuild.evm / activity.codeBuild.classified)} of Solidity contracts are plain EVM bytecode
+                  </strong>
+                  , compiled with standard solc. Only {count(activity.codeBuild.polkavm)} of {count(activity.codeBuild.classified)} use
+                  PolkaVM, the RISC-V target V3 introduces through resolc. Builders are treating V3 as an EVM chain: the native path is
+                  almost unused.
+                </p>
+                <Note title="How contracts are built">
+                  <div className="split-bar" role="img" aria-label={`${activity.codeBuild.evm} EVM bytecode, ${activity.codeBuild.polkavm} PolkaVM`}>
+                    <span className="split-evm" style={{ flexGrow: activity.codeBuild.evm }} />
+                    <span className="split-pvm" style={{ flexGrow: Math.max(activity.codeBuild.polkavm, activity.codeBuild.classified / 200) }} />
+                  </div>
+                  <ol className="rank">
+                    <li>
+                      <span>
+                        <i className="dot dot-blue" aria-hidden="true" /> EVM bytecode (solc)
+                      </span>
+                      <span className="num">{count(activity.codeBuild.evm)}</span>
+                    </li>
+                    <li>
+                      <span>
+                        <i className="dot dot-warm" aria-hidden="true" /> PolkaVM (resolc)
+                      </span>
+                      <span className="num">{count(activity.codeBuild.polkavm)}</span>
+                    </li>
+                  </ol>
+                  {activity.codeBuild.solc.length > 0 && (
+                    <span className="note-foot">
+                      Most used: {activity.codeBuild.solc.map(s => `solc ${s.version} (${count(s.count)})`).join(", ")}. Read from each
+                      contract's own metadata.
+                    </span>
+                  )}
+                </Note>
+              </>
+            )}
             {activity.topContracts.length > 0 && (
               <Note title="Most-called contracts">
                 <ol className="rank">
