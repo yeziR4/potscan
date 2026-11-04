@@ -17,7 +17,7 @@
   --line-strong: #32323e;
   --text: #ececf1;
   --muted: #9b9ba8;
-  --faint: #686875;
+  --faint: #80808e;
   --link: #9a8cff;
   --accent: var(--brand-indigo);
   --on-accent: #ffffff;
@@ -39,7 +39,7 @@
   --line-strong: #cfcfd8;
   --text: #15151b;
   --muted: #5b5b67;
-  --faint: #8a8a96;
+  --faint: #6a6a76;
   --link: #4c34f1;
   --up: #16805a;
   --down: #c9282d;

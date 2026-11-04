@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { HourBucket } from "../api.ts";
 
 export type Encoding = "time" | "activity" | "failures";
@@ -16,6 +16,13 @@ const mix = (a: Rgb, b: Rgb, t: number): Rgb => [a[0] + (b[0] - a[0]) * t, a[1] 
 export function HourField({ hours, encoding, targetMs }: { hours: HourBucket[]; encoding: Encoding; targetMs: number }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const shown = useRef<{ colors: Rgb[]; radii: number[] }>(undefined);
+  // The palette comes from CSS variables, so a theme switch must repaint the field.
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme);
+  useEffect(() => {
+    const observer = new MutationObserver(() => setTheme(document.documentElement.dataset.theme));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const el = canvas.current;
@@ -114,7 +121,7 @@ export function HourField({ hours, encoding, targetMs }: { hours: HourBucket[]; 
       cancelAnimationFrame(frame);
       removeEventListener("resize", onResize);
     };
-  }, [hours, encoding, targetMs]);
+  }, [hours, encoding, targetMs, theme]);
 
   const label = `${hours.length} hours of Portaldot V3, one dot per hour, coloured by ${encoding === "time" ? "block time" : encoding === "activity" ? "transactions" : "failed transactions"}`;
   return <canvas ref={canvas} className="hour-field" role="img" aria-label={label} />;
