@@ -6,6 +6,15 @@ import { hasReviveActivity, toRows } from "./transform.ts";
 const PARALLEL_READS = 8;
 const RETRY_MS = 5_000;
 const PRUNE_EVERY = 200;
+const READ_TIMEOUT_MS = 60_000;
+
+export function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 export type IndexerState = {
   network: string;
@@ -88,9 +97,17 @@ export class Indexer {
   }
 
   private async read(number: number) {
-    const raw = await this.reader!.readBlock(number);
-    const eth = hasReviveActivity(raw) ? await this.reader!.readEthBlock(number) : undefined;
-    return toRows(raw, eth);
+    // A request in flight when the socket drops can stay pending after polkadot.js reconnects, so every read is
+    // bounded: a stuck block then fails, and the loop retries it instead of waiting forever.
+    return withTimeout(
+      (async () => {
+        const raw = await this.reader!.readBlock(number);
+        const eth = hasReviveActivity(raw) ? await this.reader!.readEthBlock(number) : undefined;
+        return toRows(raw, eth);
+      })(),
+      READ_TIMEOUT_MS,
+      `Reading block ${number} took longer than ${READ_TIMEOUT_MS / 1000} s`,
+    );
   }
 
   private prune(latest: number): void {
