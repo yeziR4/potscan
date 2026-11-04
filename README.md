@@ -24,6 +24,17 @@ Early development.
 | Explorer pages and search | Done |
 | Contract verification (Solidity to PolkaVM with resolc), attested on chain | Done |
 
+## State of Portaldot V3
+
+PotScan's home page is a live research report computed from its own index of every V3 block since genesis, refreshed every five minutes (raw data: `/api/insights`). It answers four questions, each with evidence linked into the explorer:
+
+1. **Is the network healthy?** Block times against the 6 s slot, stalls, and the validator set from the runtime.
+2. **Who is building?** Accounts, transactions by engine (Solidity, ink!, native), deployments, most-called contracts.
+3. **Why do transactions fail?** Revert rate, native dispatch errors, and Solidity reverts that still show success on the Substrate side.
+4. **What does it cost?** A deploy-cost estimator built from the runtime's own deposit settings, checked against a real deployment.
+
+Findings on the V3 testnet as of 4 November 2026: two validators produce every block, so both must be online for GRANDPA to finalize; the chain stopped for 13 h 24 m before block 232,116 on 29 October; every reverted Solidity transaction also appears as a successful `revive.ethTransact` extrinsic.
+
 ## Verification
 
 PotScan compiles the submitted Solidity with Parity's `resolc` and compares the result with the code the chain returns for the address. A match means the source, with those settings, produces exactly the deployed code. PolkaVM code carries no fingerprint of the source text, so comments and formatting are not compared. Verification is stored by code hash, so it covers every contract running the same code.
