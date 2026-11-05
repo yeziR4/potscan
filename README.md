@@ -55,8 +55,10 @@ Matches are then recorded in `VerificationRegistry` (`packages/contracts`), boun
 
 On both networks the registry verified its own source through PotScan and recorded it on chain:
 
-- Portaldot V3: attestation `0x29247ea2bc06c9efe0af73da05ecd1cc0d893f5a3a9065e575792fa6ffd3c781` (block 306,083)
+- Portaldot V3: attestation `0x29247ea2bc06c9efe0af73da05ecd1cc0d893f5a3a9065e575792fa6ffd3c781` (block 306,083), and again from the hosted site, `0x0a86c353392e58eccbf906c874d92e90141fa631b10107ad3e68a70ce256a06e`, whose record links to the live page
 - Polkadot Hub TestNet: attestation `0x4110886fa07b00b6adc48568972f2528f7f3fffd7739c69119e58b377f566423`
+
+An EVM-bytecode contract verified on V3 through the hosted site, as an exact solc match: `Guestbook` at `0x4b434c4de3d622Af1c5Ae514812eC2B8Eab8cD09` (solc 0.8.36), attestation `0xc1e67f2e3818425cdb82bf4149ba87016454a51d086a1926eccfadc6f9f6a5a4`. `isVerified(attester, target)` returns true for it and for the registry.
 
 Deploying on V3 reserves a storage deposit set by the runtime: 0.06 tPOT per byte (`revive.depositPerByte`), plus a 30 % code-hash lockup (`codeHashLockupDepositPercent`). For the 23,899-byte registry that is about 1,864 tPOT, held rather than spent, so a deployer needs roughly 1,910 tPOT available.
 
